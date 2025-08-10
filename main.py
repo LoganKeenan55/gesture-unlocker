@@ -1,6 +1,7 @@
 import cv2
 import mediapipe as mp
 import math
+import time
 
 mpHands = mp.solutions.hands
 hands = mpHands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7)
@@ -9,8 +10,12 @@ hands = mpHands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7)
 password_sequence = ["one", "two", "three"]
 entered = []
 
+hand_found = False
+gesture_start_time = None
 
 capture = cv2.VideoCapture(0)
+results = None
+img = None
 
 index_extended = False
 middle_extended = False
@@ -113,7 +118,6 @@ def check_gesture(hand):
 
 gestures = [
 
-    
     ("fist", fist_gesture),
     ("thumbs_up", thumbs_up_gesture),
     ("ok", ok_gesture),
@@ -131,36 +135,76 @@ def distance_3d_normalized(lm1, lm2):
     dz = lm2.z - lm1.z
     return math.sqrt(dx*dx + dy*dy + dz*dz) #z is guessed by mediapipe
 
-while True:
+def handle_capture():
+    global results, img
     success, img = capture.read()
 
     if not success:
-        break
+        return False
 
     img = cv2.flip(img, 1)
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    
     results = hands.process(img_rgb)
     
- 
-    if results.multi_hand_landmarks: #if hand is detected
-
-        firstHand = results.multi_hand_landmarks[0]
-        check_fingers_extended()
-        handedness  = results.multi_handedness[0].classification[0].label  #Left or Right
-
-        print(check_gesture(firstHand))
-        #print(is_thumb_extended(firstHand))
-        #print(distance_3d_normalized(firstHand.landmark[8],firstHand.landmark[4]))
-        for landmark in firstHand.landmark: #draw circles
-             draw_circle(img,landmark)
-
-
 
     img_resized = cv2.resize(img, (0, 0), fx=1.5, fy=1.5)
 
     cv2.imshow("Image", img_resized)
     if cv2.waitKey(1) & 0xFF == ord('q'): #quits
+        return False
+
+    return True
+print("Please hold up hand")
+while True:
+
+    if not handle_capture(): #captures video and sets img / result
         break
+
+    if not results.multi_hand_landmarks:  #skip to next frame if no hand
+        gesture_start_time = None  #reset if hand is lost
+        continue  
+
+    if not hand_found:
+        print("hand found! ")
+        hand_found = True
+        print(f"Please perform gesture " + str(1))
+        gesture_start_time = None #new prompt
+        
+        #start prompting
+
+
+    firstHand = results.multi_hand_landmarks[0]
+    check_fingers_extended()
+    handedness  = results.multi_handedness[0].classification[0].label  #left or right
+
+    #print(check_gesture(firstHand))
+
+    detected_gesture = check_gesture(firstHand)
+
+    for landmark in firstHand.landmark: #draw circles on hand landmarks TODO make better
+            draw_circle(img,landmark)
+
+    if detected_gesture:
+        if gesture_start_time is None:
+            gesture_start_time = time.time()
+            last_gesture = detected_gesture
+        elif detected_gesture == last_gesture:
+            if time.time() - gesture_start_time >= 3:
+                entered.append(detected_gesture)
+                print(f"Current gesture set to: {detected_gesture}")
+                print(f"Please perform gesture " + str(len(entered)+1))
+                gesture_start_time = None  #reset for next time
+        else:
+            #gesture changed early
+            gesture_start_time = time.time()
+            last_gesture = detected_gesture
+    else:
+        gesture_start_time = None  #no gesture detected
+
+
+
+    
 
 capture.release()
 
