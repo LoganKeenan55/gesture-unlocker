@@ -2,16 +2,18 @@ import cv2
 import mediapipe as mp
 import math
 import time
-
+import os
 mpHands = mp.solutions.hands
 hands = mpHands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7)
 
 
 password_sequence = ["one", "two", "three"]
+max_password_length = 5
 entered = []
 
 hand_found = False
 gesture_start_time = None
+gesture_time = 2
 
 capture = cv2.VideoCapture(0)
 results = None
@@ -116,13 +118,16 @@ def check_gesture(hand):
             return name
     return None
 
+def open_file():
+    print("yippeeee")
+
 gestures = [
 
     ("fist", fist_gesture),
     ("thumbs_up", thumbs_up_gesture),
     ("ok", ok_gesture),
     ("one", one_gesture),
-    ("two / peace", peace_gesture),
+    ("two", peace_gesture),
     ("three", three_gesture),
     ("four", four_gesture),
     ("five", five_gesture)
@@ -168,6 +173,7 @@ while True:
     if not hand_found:
         print("hand found! ")
         hand_found = True
+        os.system('cls')
         print(f"Please perform gesture " + str(1))
         gesture_start_time = None #new prompt
         
@@ -183,18 +189,28 @@ while True:
     detected_gesture = check_gesture(firstHand)
 
     for landmark in firstHand.landmark: #draw circles on hand landmarks TODO make better
-            draw_circle(img,landmark)
+        draw_circle(img,landmark)
 
     if detected_gesture:
         if gesture_start_time is None:
             gesture_start_time = time.time()
             last_gesture = detected_gesture
         elif detected_gesture == last_gesture:
-            if time.time() - gesture_start_time >= 3:
+
+            if time.time() - gesture_start_time >= gesture_time:
                 entered.append(detected_gesture)
-                print(f"Current gesture set to: {detected_gesture}")
+                os.system('cls')
+
+                if entered == password_sequence:
+                    open_file()
+                    break
+                if len(entered) >= max_password_length:
+                    print("WRONG")
+                    break
+                print(entered)
                 print(f"Please perform gesture " + str(len(entered)+1))
                 gesture_start_time = None  #reset for next time
+
         else:
             #gesture changed early
             gesture_start_time = time.time()
