@@ -2,27 +2,32 @@ import cv2
 import mediapipe as mp
 import math
 import time
+from cryptography.fernet import Fernet
+import tempfile
 import os
-import sys
 print(mp.__file__)
 
 mpHands = mp.solutions.hands
 hands = mpHands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7)
 
 
-password_sequence = ["one", "two", "three"]
+password_sequence = ["one", "two", "three"] #secret !!
+key = "IVTpbm9B7bOV8eqPDnTfzj-qu-HGoq9dgrnwAIjk1Kk=" #secret !!
 max_password_length = 5
 entered = []
+
+fernet = Fernet(key)
 
 hand_found = False
 gesture_start_time = None
 gesture_time = 2
 draw_circles = True
 
+
 capture = cv2.VideoCapture(0)
 results = None
 img = None
-file_path = "H:\Videos\Hand\code\hand-gesture-password\Secret.txt"
+file_path = "H:\Videos\Hand\code\hand-gesture-password\Secret.enc"
 
 index_extended = False
 middle_extended = False
@@ -124,8 +129,17 @@ def check_gesture(hand):
     return None
 
 def open_file(path):
-    os.startfile(path)
+    f = open(path, "rb")
+    encrypted_data = f.read()
+    f.close()
 
+    decrypted_data = fernet.decrypt(encrypted_data)
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".txt")
+    tmp.write(decrypted_data)
+    tmp_path = tmp.name
+    tmp.close()
+
+    os.startfile(tmp_path)
         
 gestures = [
 
