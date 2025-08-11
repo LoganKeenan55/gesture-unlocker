@@ -3,6 +3,9 @@ import mediapipe as mp
 import math
 import time
 import os
+import sys
+print(mp.__file__)
+
 mpHands = mp.solutions.hands
 hands = mpHands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7)
 
@@ -14,10 +17,12 @@ entered = []
 hand_found = False
 gesture_start_time = None
 gesture_time = 2
+draw_circles = True
 
 capture = cv2.VideoCapture(0)
 results = None
 img = None
+file_path = "H:\Videos\Hand\code\hand-gesture-password\Secret.txt"
 
 index_extended = False
 middle_extended = False
@@ -118,9 +123,10 @@ def check_gesture(hand):
             return name
     return None
 
-def open_file():
-    print("yippeeee")
+def open_file(path):
+    os.startfile(path)
 
+        
 gestures = [
 
     ("fist", fist_gesture),
@@ -141,7 +147,7 @@ def distance_3d_normalized(lm1, lm2):
     return math.sqrt(dx*dx + dy*dy + dz*dz) #z is guessed by mediapipe
 
 def handle_capture():
-    global results, img
+    global results, img, firstHand
     success, img = capture.read()
 
     if not success:
@@ -151,15 +157,23 @@ def handle_capture():
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     
     results = hands.process(img_rgb)
+
     
+    if results.multi_hand_landmarks:
+        firstHand = results.multi_hand_landmarks[0]
+        if draw_circles:
+            for landmark in firstHand.landmark: #draw circles
+                draw_circle(img, landmark)
 
     img_resized = cv2.resize(img, (0, 0), fx=1.5, fy=1.5)
-
     cv2.imshow("Image", img_resized)
-    if cv2.waitKey(1) & 0xFF == ord('q'): #quits
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):  #quits
         return False
 
     return True
+
+
 print("Please hold up hand")
 while True:
 
@@ -177,19 +191,14 @@ while True:
         print(f"Please perform gesture " + str(1))
         gesture_start_time = None #new prompt
         
-        #start prompting
 
-
-    firstHand = results.multi_hand_landmarks[0]
+ 
     check_fingers_extended()
     handedness  = results.multi_handedness[0].classification[0].label  #left or right
 
-    #print(check_gesture(firstHand))
-
     detected_gesture = check_gesture(firstHand)
 
-    for landmark in firstHand.landmark: #draw circles on hand landmarks TODO make better
-        draw_circle(img,landmark)
+    
 
     if detected_gesture:
         if gesture_start_time is None:
@@ -202,8 +211,12 @@ while True:
                 os.system('cls')
 
                 if entered == password_sequence:
-                    open_file()
+                    if file_path:
+                        open_file(file_path)
+                    else:
+                        print("No file path provided.")
                     break
+
                 if len(entered) >= max_password_length:
                     print("WRONG")
                     break
