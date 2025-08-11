@@ -3,7 +3,8 @@ from cryptography.fernet import Fernet
 
 ### 
 
-file_path = "H:\Videos\Hand\code\hand-gesture-password\Secret.txt"
+script_dir = os.path.dirname(os.path.abspath(__file__))
+file_path = os.path.join(script_dir, "Secret.txt")
 
 ###
 

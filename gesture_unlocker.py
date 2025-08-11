@@ -11,8 +11,18 @@ mpHands = mp.solutions.hands
 hands = mpHands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7)
 
 
-password_sequence = ["one", "two", "three"] #secret !!
-key = "IVTpbm9B7bOV8eqPDnTfzj-qu-HGoq9dgrnwAIjk1Kk=" #secret !!
+
+# == File path to encryped file ==
+script_dir = os.path.dirname(os.path.abspath(__file__))
+file_path = os.path.join(script_dir, "Secret.enc")
+# hard code if you're into that -> file_path = "H:\Secret.enc" 
+
+
+# == Secret, don't look! avert thine eyes!!
+password_sequence = ["one", "two", "three"] #gestures
+key = "8Tp5ZKq0o_lXASmSZNnu-9HL22YzdbqEi8XbICNeDFU=" #ecryption key
+
+
 max_password_length = 5
 entered = []
 
@@ -27,7 +37,7 @@ draw_circles = True
 capture = cv2.VideoCapture(0)
 results = None
 img = None
-file_path = "H:\Videos\Hand\code\hand-gesture-password\Secret.enc"
+
 
 index_extended = False
 middle_extended = False
@@ -39,13 +49,13 @@ handedness = None #left / right
 
 
 
-def draw_circle(img, landmark):
+def draw_circle(img, landmark, r, c):
     img_h, img_w, _ = img.shape
 
     cx, cy = int(landmark.x * img_w), int(landmark.y * img_h)
 
     #draw a circle
-    cv2.circle(img, (cx, cy), radius=5, color=(255, 0, 0), thickness=cv2.FILLED)
+    cv2.circle(img, (cx, cy), radius=r, color=c, thickness=cv2.FILLED)
 
 
 def check_fingers_extended():
@@ -177,9 +187,23 @@ def handle_capture():
         firstHand = results.multi_hand_landmarks[0]
         if draw_circles:
             for landmark in firstHand.landmark: #draw circles
-                draw_circle(img, landmark)
+                draw_circle(img, landmark, 5, (255, 0, 0))
+
+        if index_extended:
+            draw_circle(img, firstHand.landmark[8], 5, (0, 0, 255))  #
+        if middle_extended:
+            draw_circle(img, firstHand.landmark[12], 5, (0, 0, 255)) #
+        if ring_extended:
+            draw_circle(img, firstHand.landmark[16], 5, (0, 0, 255)) # tips of fingers
+        if pinky_extended:
+            draw_circle(img, firstHand.landmark[20], 5, (0, 0, 255)) # 
+        if thumb_extended:
+            draw_circle(img, firstHand.landmark[4], 5, (0, 0, 255))  # 
 
     img_resized = cv2.resize(img, (0, 0), fx=1.5, fy=1.5)
+ 
+
+
     cv2.imshow("Image", img_resized)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):  #quits
@@ -246,8 +270,6 @@ while True:
         gesture_start_time = None  #no gesture detected
 
 
-
-    
 
 capture.release()
 
