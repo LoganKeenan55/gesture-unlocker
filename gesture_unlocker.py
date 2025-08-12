@@ -136,7 +136,7 @@ def five_gesture(hand):
 
 
 def check_gesture(hand):
-    for name, func in gestures:
+    for name, func in gestures.items():
         if func(hand):
             return name
     return None
@@ -154,18 +154,16 @@ def open_file(path):
 
     os.startfile(tmp_path)
         
-gestures = [
-
-    ("fist", fist_gesture),
-    ("thumbs_up", thumbs_up_gesture),
-    ("ok", ok_gesture),
-    ("one", one_gesture),
-    ("two", peace_gesture),
-    ("three", three_gesture),
-    ("four", four_gesture),
-    ("five", five_gesture)
-
-]
+gestures = {
+    "fist": fist_gesture,
+    "thumbs_up": thumbs_up_gesture,
+    "ok": ok_gesture,
+    "one": one_gesture,
+    "two": peace_gesture,
+    "three": three_gesture,
+    "four": four_gesture,
+    "five": five_gesture
+}
 
 def distance_3d_normalized(lm1, lm2):
     dx = lm2.x - lm1.x
@@ -218,7 +216,7 @@ def handle_capture():
         if thumb_extended:
             draw_circle(img, firstHand.landmark[4], 5, (0, 0, 255))  # 
     img_resized = cv2.resize(img, (0, 0), fx=1.5, fy=1.5)
-    cv2.imshow("Image", img_resized)
+    cv2.imshow("Gesture Unlocker", img_resized)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         return False
