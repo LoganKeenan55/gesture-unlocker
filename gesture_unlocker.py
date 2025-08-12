@@ -5,6 +5,7 @@ import time
 from cryptography.fernet import Fernet
 import tempfile
 import os
+import numpy as np
 print(mp.__file__)
 
 mpHands = mp.solutions.hands
@@ -18,10 +19,12 @@ file_path = os.path.join(script_dir, "Secret.enc")
 # hard code if you're into that -> file_path = "H:\Secret.enc" 
 
 
-# == Secret, don't look! avert thine eyes!!
+# == Secret, don't look! avert thine eyes!! ==
 password_sequence = ["one", "two", "three"] #gestures
 key = "8Tp5ZKq0o_lXASmSZNnu-9HL22YzdbqEi8XbICNeDFU=" #ecryption key
 
+# == Color of background, set to "None" to see camera ==
+use_background_color = None #(33, 26, 26)
 
 max_password_length = 5
 entered = []
@@ -78,7 +81,7 @@ def is_thumb_extended(hand):
             return hand.landmark[4].x > hand.landmark[3].x
     elif handedness == "Right":
         if hand.landmark[4].y < hand.landmark[6].y:
-            return hand.landmark[4].x > hand.landmark[2].x
+            return hand.landmark[4].x > hand.landmark[3].x
         else:
             return hand.landmark[4].x < hand.landmark[3].x
 
@@ -182,13 +185,28 @@ def handle_capture():
     
     results = hands.process(img_rgb)
 
-    
+    img_h, img_w, _ = img.shape
+    #color to block camera
+    if use_background_color:
+        background_bgr = (33, 26, 26)
+        img = np.full((img_h, img_w, 3), background_bgr, dtype=np.uint8)
+
     if results.multi_hand_landmarks:
         firstHand = results.multi_hand_landmarks[0]
-        if draw_circles:
-            for landmark in firstHand.landmark: #draw circles
-                draw_circle(img, landmark, 5, (255, 0, 0))
 
+        #connections
+        for connection in mpHands.HAND_CONNECTIONS:
+            start_idx, end_idx = connection
+            start = firstHand.landmark[start_idx]
+            end = firstHand.landmark[end_idx]
+            x1, y1 = int(start.x * img_w), int(start.y * img_h)
+            x2, y2 = int(end.x * img_w), int(end.y * img_h)
+            cv2.line(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+        #draw circles
+        for landmark in firstHand.landmark:
+            draw_circle(img, landmark, 5, (255, 0, 0))
+    
         if index_extended:
             draw_circle(img, firstHand.landmark[8], 5, (0, 0, 255))  #
         if middle_extended:
@@ -199,17 +217,14 @@ def handle_capture():
             draw_circle(img, firstHand.landmark[20], 5, (0, 0, 255)) # 
         if thumb_extended:
             draw_circle(img, firstHand.landmark[4], 5, (0, 0, 255))  # 
-
     img_resized = cv2.resize(img, (0, 0), fx=1.5, fy=1.5)
- 
-
-
     cv2.imshow("Image", img_resized)
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):  #quits
+    if cv2.waitKey(1) & 0xFF == ord('q'):
         return False
 
     return True
+
 
 
 print("Please hold up hand")
