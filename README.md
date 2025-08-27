@@ -1,4 +1,4 @@
-gesture-unlock
+gesture-unlocker
 
 A Python-based hand gesture password system using MediaPipe and OpenCV. 
 
